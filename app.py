@@ -2,13 +2,13 @@ from flask import Flask, render_template, request
 
 app = Flask(__name__)
 
-@app.route('/register', methods=['GET','POST'])
-def register():
+@app.route('/signup', methods=['GET','POST'])
+def signup():
     if request.method == 'POST':
         return "Registered Successfully"
-    return render_template("register.html")
+    return render_template("registration.html")
 
-@app.route('/register', methods=['GET','POST'])
+@app.route('/login', methods=['GET','POST'])
 def login():
     if request.method == 'POST':
         return "Logged In"
