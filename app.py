@@ -1,6 +1,15 @@
+import mysql.connector
 from flask import Flask, render_template, request
 
 app = Flask(__name__)
+
+db = mysql.connector.connect(
+    host="localhost",
+    user="root",
+    password="",
+    database="securebank"  # exact name you created
+)
+cursor = db.cursor()
 
 @app.route('/signup', methods=['GET','POST'])
 def signup():
