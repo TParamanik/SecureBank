@@ -1,7 +1,8 @@
 import mysql.connector
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, session
 
 app = Flask(__name__)
+app.secret_key = '9f3aG8pV2xBqL6zT1eR7WcY5mN0HuJXd'
 
 db = mysql.connector.connect(
     host="localhost",
@@ -38,17 +39,34 @@ def login():
         username = request.form['username']
         password = request.form['password']
 
-        cursor.execute(
-            "SELECT * FROM users WHERE username = %s AND password = %s",
-            (username, password)
-        )
-        user = cursor.fetchone()
+        try:
+            cursor.execute(
+                "SELECT * FROM users WHERE username = %s AND password = %s",
+                (username, password)
+            )
+            user = cursor.fetchone()
         
-        if user:
-            return "Login Successful"
-        else:
-            return "Invalid username or password."
+            if user:
+                session['username'] = username
+                return redirect('/dashboard')
+            else:
+                return "Invalid username or password."
+        except:
+            return "Error during login"
+
     return render_template("login.html")
+
+@app.route('/dashboard')
+def dashboard():
+    if 'username' not in session:
+        return render_template("dashboard.html", username=session['username'])
+    else:
+        return redirect('/login')
+    
+@app.route('/logout')
+def logout():
+    session.pop('username', None)
+    return redirect('/login')
 
 if __name__ == '__main__':
     app.run(debug=True)
