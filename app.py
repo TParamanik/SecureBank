@@ -27,7 +27,7 @@ def signup():
                 (username, password)
             )
             db.commit()
-            return "Registered Successfully"
+            return redirect('/login')
         except:
             return "Username already exists or error occurred."
         
@@ -58,10 +58,9 @@ def login():
 
 @app.route('/dashboard')
 def dashboard():
-    if 'username' not in session:
+    if 'username' in session:
         return render_template("dashboard.html", username=session['username'])
-    else:
-        return redirect('/login')
+    return redirect('/login')
     
 @app.route('/logout')
 def logout():
