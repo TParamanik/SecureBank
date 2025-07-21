@@ -1,5 +1,5 @@
 import mysql.connector
-from flask import Flask, render_template, request, redirect, session
+from flask import Flask, render_template, request, redirect, session, make_response
 
 app = Flask(__name__)
 app.secret_key = '9f3aG8pV2xBqL6zT1eR7WcY5mN0HuJXd'
@@ -70,10 +70,17 @@ def transactions():
         return redirect('/login')
     
     username = session['username']
-    cursor.execute("SELECT * FROM transactions WHERE user_id = %s ORDER BY timestamp DESC", (user_id,))
+    cursor.execute("SELECT id FROM users WHERE username = %s", (username,))
+    result = cursor.fetchone()
+    if result:
+        user_id = result[0]
+    else:
+        return "User not found", 404
+    
+    cursor.execute("SELECT amount, type, timestamp FROM transactions WHERE user_id = %s ORDER BY timestamp DESC", (user_id,))
     data = cursor.fetchall()
 
-    return render_template("transctions.html", username=username, transactions=data)
+    return render_template("transactions.html", username=username, transactions=data)
 
 @app.route('/add', methods=['GET', 'POST'])
 def add_money():
@@ -81,17 +88,31 @@ def add_money():
         return redirect('/login')
     
     if request.method == 'POST':
-        amount = request.form['amount']
+        amount = float(request.form['amount'])
+        description = request.form.get('description', '')
         username = session['username']
 
+        cursor.execute("SELECT id FROM users WHERE username = %s", (username,))
+        result = cursor.fetchone()
+        if result:
+            user_id = result[0]
+        else:
+            return "User not found", 404
+
         try:
-            cursor.execute("INSERT INTO transactions (username, amount, type) VALUES (%s, %s, 'credit')", (username, amount))
-            db.commit
+            cursor.execute("INSERT INTO transactions (user_id, amount, type, description) VALUES (%s, %s, 'credit', %s)", (user_id, amount, description))
+            db.commit()
             return redirect('/transactions')
-        except:
-            return "Error while adding money"
+        except Exception as e:
+            return f"Error while adding money: {e}"
         
-    return render_template('transaction.html', action='add')
+    response = make_response(render_template('transactions.html', action='add'))
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+        
+    return render_template('transactions.html', action='add')
 
 @app.route('/withdraw', methods=['GET', 'POST'])
 def withdraw_money():
@@ -100,16 +121,24 @@ def withdraw_money():
     
     if request.method == 'POST':
         amount = request.form['amount']
+        description = request.form.get('desription','')
         username = session['username']
 
+        cursor.execute("SELECT id FROM users WHERE username = %s", (username,))
+        result = cursor.fetchone()
+        if result:
+            user_id = result[0]
+        else:
+            return "User not found", 404
+
         try:
-            cursor.execute("INSERT INTO transactions (username, amount, type) VALUES (%s, %s, 'debit')", (username, amount))
-            db.commit
-            return redirect('/transaction')
+            cursor.execute("INSERT INTO transactions (user_id, amount, type, description) VALUES (%s, %s, 'debit', %s)", (user_id, amount, description))
+            db.commit()
+            return redirect('/transactions')
         except:
             return "Error while withdrawing money."
         
-    return render_template('transaction.html', action='withdraw')
+    return render_template('transactions.html', action='withdraw')
 
 if __name__ == '__main__':
     app.run(debug=True)

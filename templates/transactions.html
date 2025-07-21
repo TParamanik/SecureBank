@@ -9,7 +9,7 @@
 
     <h3>Add Money</h3>
     <form method="POST" action="/add">
-        <input type="number" name="amount" step="0.01" required>
+        <input type="number" name="amount" value="" step="0.01" required>
         <input type="text" name="description" placeholder="Description">
         <button type="submit">Add</button>
     </form>
@@ -24,7 +24,9 @@
     <h3>Transaction History</h3>
     <ul>
         {% for txn in transactions %}
-            <li>{{txn.timestamp}} - {{txn.type}} &#8377{{txn.amount}} - {{txn.description}}</li>
+            <li>&#8377;{{ txn[0] }} {{ txn[1] }} on {{ txn[2].strftime('%d %B %Y, %I:%M %p') }}</li>
+        {% else %}
+            <li>No transaction yet.</li>
         {% endfor %}
     </ul>
 </body>
