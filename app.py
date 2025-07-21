@@ -11,9 +11,6 @@ db = mysql.connector.connect(
     database="securebank"  
 )
 cursor = db.cursor()
-cursor.execute("SHOW TABLES")
-print("Tables:", cursor.fetchall())
-
 
 @app.route('/signup', methods=['GET','POST'])
 def signup():
@@ -66,6 +63,53 @@ def dashboard():
 def logout():
     session.pop('username', None)
     return redirect('/login')
+
+@app.route('/transactions')
+def transactions():
+    if 'username' not in session:
+        return redirect('/login')
+    
+    username = session['username']
+    cursor.execute("SELECT * FROM transactions WHERE user_id = %s ORDER BY timestamp DESC", (user_id,))
+    data = cursor.fetchall()
+
+    return render_template("transctions.html", username=username, transactions=data)
+
+@app.route('/add', methods=['GET', 'POST'])
+def add_money():
+    if 'username' not in session:
+        return redirect('/login')
+    
+    if request.method == 'POST':
+        amount = request.form['amount']
+        username = session['username']
+
+        try:
+            cursor.execute("INSERT INTO transactions (username, amount, type) VALUES (%s, %s, 'credit')", (username, amount))
+            db.commit
+            return redirect('/transactions')
+        except:
+            return "Error while adding money"
+        
+    return render_template('transaction.html', action='add')
+
+@app.route('/withdraw', methods=['GET', 'POST'])
+def withdraw_money():
+    if 'username' not in session:
+        return redirect('/login')
+    
+    if request.method == 'POST':
+        amount = request.form['amount']
+        username = session['username']
+
+        try:
+            cursor.execute("INSERT INTO transactions (username, amount, type) VALUES (%s, %s, 'debit')", (username, amount))
+            db.commit
+            return redirect('/transaction')
+        except:
+            return "Error while withdrawing money."
+        
+    return render_template('transaction.html', action='withdraw')
 
 if __name__ == '__main__':
     app.run(debug=True)
