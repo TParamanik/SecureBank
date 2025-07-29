@@ -58,9 +58,12 @@ def login():
 
 @app.route('/dashboard')
 def dashboard():
-    if 'username' in session:
-        return render_template("dashboard.html", username=session['username'])
-    return redirect('/login')
+    if 'username' not in session:
+        return redirect('/login')
+    username = session['username']
+    cursor.execute("SELECT balance FROM users where username = %s", (username,))
+    balance = cursor.fetchone()[0]
+    return render_template("dashboard.html", username=username, balance=balance)
     
 @app.route('/logout')
 def logout():
@@ -83,7 +86,14 @@ def transactions():
     cursor.execute("SELECT amount, type, timestamp FROM transactions WHERE user_id = %s ORDER BY timestamp DESC", (user_id,))
     data = cursor.fetchall()
 
-    return render_template("transactions.html", username=username, transactions=data)
+    balance = 0
+    for amount, txn_type, _ in data:
+        if txn_type == 'credit':
+            balance += amount
+        elif txn_type == 'debit':
+            balance -= amount
+
+    return render_template("transactions.html", username=username, transactions=data, balance=balance)
 
 @app.route('/add-form')
 def add_form():
@@ -112,6 +122,7 @@ def add_money():
 
     try:
         cursor.execute("INSERT INTO transactions (user_id, amount, type, description) VALUES (%s, %s, 'credit', %s)", (user_id, amount, description))
+        cursor.execute("UPDATE users SET balance = balance + %s where id = %s",(amount, user_id))
         db.commit()
         return redirect('/transactions')
     except Exception as e:
@@ -145,6 +156,7 @@ def withdraw_money():
 
     try:
         cursor.execute("INSERT INTO transactions (user_id, amount, type, description) VALUES (%s, %s, 'debit', %s)", (user_id, amount, description))
+        cursor.execute("UPDATE users SET balance = balance - %s where id = %s", (amount, user_id))
         db.commit()
         return redirect('/transactions')
     except:
