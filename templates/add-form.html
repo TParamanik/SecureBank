@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add Money</title>
+</head>
+<body>
+    <form method="POST" action="/add">
+        <label for="amount">Amount to add: </label>
+        <input type="number" name="amount" value="" step="0.01" required>
+        <input type="text" name="description" placeholder="Description">
+        <button type="submit">Add</button>
+    </form>
+
+    <a href="/transactions">Back</a>
+</body>
+</html>

@@ -82,63 +82,70 @@ def transactions():
 
     return render_template("transactions.html", username=username, transactions=data)
 
-@app.route('/add', methods=['GET', 'POST'])
+@app.route('/add-form')
+def add_form():
+    if 'username' not in session:
+        return redirect('/login')
+    return render_template('add-form.html', action='add')
+
+@app.route('/add', methods=['POST'])
 def add_money():
     if 'username' not in session:
         return redirect('/login')
     
-    if request.method == 'POST':
-        amount = float(request.form['amount'])
-        description = request.form.get('description', '')
-        username = session['username']
+    amount_str = request.form['amount']
+    if not amount_str.replace('.', '', 1).isdigit() or float(amount_str) <= 0:
+        return "Invalid amount", 400
+    amount = float(amount_str)
+    description = request.form.get('description', '')
+    username = session['username']
 
-        cursor.execute("SELECT id FROM users WHERE username = %s", (username,))
-        result = cursor.fetchone()
-        if result:
-            user_id = result[0]
-        else:
-            return "User not found", 404
+    cursor.execute("SELECT id FROM users WHERE username = %s", (username,))
+    result = cursor.fetchone()
+    if result:
+        user_id = result[0]
+    else:
+        return "User not found", 404
 
-        try:
-            cursor.execute("INSERT INTO transactions (user_id, amount, type, description) VALUES (%s, %s, 'credit', %s)", (user_id, amount, description))
-            db.commit()
-            return redirect('/transactions')
-        except Exception as e:
-            return f"Error while adding money: {e}"
-        
-    response = make_response(render_template('transactions.html', action='add'))
-    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
-    response.headers["Pragma"] = "no-cache"
-    response.headers["Expires"] = "0"
-    return response
-        
-    return render_template('transactions.html', action='add')
+    try:
+        cursor.execute("INSERT INTO transactions (user_id, amount, type, description) VALUES (%s, %s, 'credit', %s)", (user_id, amount, description))
+        db.commit()
+        return redirect('/transactions')
+    except Exception as e:
+        return f"Error while adding money: {e}"
+    
+@app.route('/withdraw-form')
+def withdraw_form():
+    if 'username' not in session:
+        return redirect('/login')
+    return render_template('withdraw-form.html', action='withdraw')
 
-@app.route('/withdraw', methods=['GET', 'POST'])
+@app.route('/withdraw', methods=['POST'])
 def withdraw_money():
     if 'username' not in session:
         return redirect('/login')
     
-    if request.method == 'POST':
-        amount = request.form['amount']
-        description = request.form.get('desription','')
-        username = session['username']
+    
+    amount_str = request.form['amount']
+    if not amount_str.replace('.', '', 1).isdigit or float(amount_str) <= 0:
+        return "Invalid amount", 404
+    amount = float(amount_str)
+    description = request.form.get('desription', '')
+    username = session['username']
 
-        cursor.execute("SELECT id FROM users WHERE username = %s", (username,))
-        result = cursor.fetchone()
-        if result:
-            user_id = result[0]
-        else:
-            return "User not found", 404
+    cursor.execute("SELECT id FROM users WHERE username = %s", (username,))
+    result = cursor.fetchone()
+    if result:
+        user_id = result[0]
+    else:
+        return "User not found", 404
 
-        try:
-            cursor.execute("INSERT INTO transactions (user_id, amount, type, description) VALUES (%s, %s, 'debit', %s)", (user_id, amount, description))
-            db.commit()
-            return redirect('/transactions')
-        except:
-            return "Error while withdrawing money."
-        
-    return render_template('transactions.html', action='withdraw')
+    try:
+        cursor.execute("INSERT INTO transactions (user_id, amount, type, description) VALUES (%s, %s, 'debit', %s)", (user_id, amount, description))
+        db.commit()
+        return redirect('/transactions')
+    except:
+        return "Error while withdrawing money."
 
 if __name__ == '__main__':
     app.run(debug=True)
