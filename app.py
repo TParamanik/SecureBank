@@ -1,8 +1,11 @@
+from dotenv import load_dotenv
+import os
 import mysql.connector
 from flask import Flask, render_template, request, redirect, session, make_response
 
+load_dotenv()
 app = Flask(__name__)
-app.secret_key = '9f3aG8pV2xBqL6zT1eR7WcY5mN0HuJXd'
+app.secret_key = os.getenv("SECRET_KEY")
 
 db = mysql.connector.connect(
     host="localhost",
